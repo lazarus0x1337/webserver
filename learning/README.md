@@ -34,9 +34,11 @@ You must have come across many situations when you need to pass some information
 
 The GET method sends the encoded user information appended to the page request. The page and the encoded information are separated by the ? character as follows −
 -> "http://www.test.com/cgi-bin/cpp.cgi?key1=value1&key2=value2"
-example : "/cgi-bin/cpp_get.cgi?first_name=ZARA&last_name=ALI"
+
 
 Below is a program to generate cpp_get.cgi CGI program to handle input given by web browser. We are going to use C++ CGI library which makes it very easy to access passed information 
+
+example : "/cgi-bin/cpp_get.cgi?first_name=ZARA&last_name=ALI"
 
 ```c++
 #include <iostream>
