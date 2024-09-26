@@ -15,11 +15,7 @@ int main()
     the default protocol is TCP (IPPROTO_TCP).
     */
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sockfd < 0) {
-    std::cout << "Failed to create socket. errno: " << errno << std::endl;
-    exit(EXIT_FAILURE);
-  }
-  std::cout << "create socket done "<< std::endl;
+    std::cout << "create socket done "<< std::endl;
 
   /*
   Why htons() is needed:
@@ -62,6 +58,25 @@ int main()
 
     /*
         Start listening. Hold at most 10 connections in the queue
+        The listen() function applies only to stream sockets. 
+        It indicates a readiness to accept client connection requests,
+        and creates a connection request queue of length backlog to queue incoming connection requests. 
+        Once full, additional connection requests are rejected.
+    
+        the queue refers to a temporary holding area where pending client 
+        connection requests are stored while the server is not yet ready to accept them
+
+        Without this queue, the server would only be able to handle one client connection at a time
+        and any additional clients would be immediately rejected if the server was busy.
+
+        the connection is placed in the queue until the server is ready to process it via the accept()
+        Once the server calls accept(), it removes a connection request from the queue and starts interacting with that client.
+    
+        listen(sockfd , backlog);
+        backlog: we can use macro : SOMAXCONN
+        Use the SOMAXCONN statement to specify the maximum number 
+        of connection requests queued for any listening socket.
+        https://ibm.com/docs/en/zos/2.4.0?topic=statements-somaxconn-statement
     */
 
     if (listen(sockfd, 10) < 0)
@@ -71,6 +86,12 @@ int main()
     } 
     
 
+    /*source IBM 
+        accept() call is used by a server to accept a connection request from a client. When a connection is available
+        The accept() call creates a new socket descriptor with the same properties as socket and returns it to the caller
+        The new socket descriptor cannot be used to accept new connections. The original socket,
+        remains available to accept more connection requests.
+    */
     ssize_t addrlen = sizeof(sockaddr);
     int connection = accept(sockfd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
     if (connection < 0)
@@ -80,8 +101,9 @@ int main()
     }
 
     // Read from the connection
-    char buffer[10];
-    ssize_t bytesRead = read(connection, buffer, 10);
+    char buffer[100];
+    ssize_t bytesRead = read(connection, buffer, 100);
+    buffer[bytesRead] = 0;
     std::cout << "The message was: " << buffer;
 
     // Send a message to the connection
@@ -91,4 +113,17 @@ int main()
     // Close the connections
     close(connection);
     close(sockfd);
+
+    /*
+        One thing I discovered while creating this server is 
+        that when I did this and tried to restart the server right away 
+        I got an error: Failed to bind to port 9999. errno: 98
+
+        After some research, I found that even after we call close, 
+        the tcp connection is not immediately freed. 
+        This is part of the TCP protocol definition. 
+        Before being closed, a socket transitions to TIME_WAIT state. 
+        This is done to give time to the socket to cleanly shutdown. 
+        After some time, the address will be released by the OS. 
+    */
 }
