@@ -34,4 +34,3 @@ This project is a collaborative effort by:
      git clone https://github.com/your-github-username/webserv.git
      cd webserv
     ./webserv configFiles/default.config
-```
